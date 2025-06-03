@@ -1,0 +1,67 @@
+.custom-navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+}
+
+.brand-name {
+  font-family: 'Dancing Script', cursive;
+  font-size: 2.5rem !important;
+  color: #28a745 !important;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  font-weight: 900;
+}
+
+.brand-name:hover {
+  transform: scale(1.05);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-brand {
+  font-weight: bold;
+  color: #28a745 !important;
+}
+
+.nav-link {
+  color: #333 !important;
+  margin: 0 0.5rem;
+  transition: color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+  color: #28a745 !important;
+}
+
+.cart-link,
+.orders-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cart-link svg,
+.orders-link svg {
+  font-size: 1.2rem;
+}
+
+.logout-btn {
+  margin-left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logout-btn svg {
+  font-size: 1.2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+  .nav-link {
+    margin: 0.5rem 0;
+  }
+
+  .logout-btn {
+    margin: 0.5rem 0;
+  }
+} 
