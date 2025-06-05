@@ -18,7 +18,7 @@ const Menu = () => {
 
   // Create axios instance with auth header
   const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'https://srisaijucies-backend.onrender.com/api',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -31,7 +31,7 @@ const Menu = () => {
 
   const fetchItems = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/items');
+      const response = await axios.get('https://srisaijucies-backend.onrender.com/api/items');
       setItems(response.data);
       setError('');
     } catch (err) {

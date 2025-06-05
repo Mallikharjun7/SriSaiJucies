@@ -11,7 +11,7 @@ const MenuItems = () => {
     const fetchItems = async () => {
         try {
             const adminToken = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:5000/api/items', {
+            const response = await axios.get('https://srisaijucies-backend.onrender.com/api/items', {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }

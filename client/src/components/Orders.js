@@ -22,7 +22,7 @@ const Orders = () => {
       throw new Error('No authentication token found');
     }
     return {
-      baseURL: 'http://localhost:5000',
+      baseURL: 'https://srisaijucies-backend.onrender.com',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -48,7 +48,7 @@ const Orders = () => {
 
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io('https://srisaijucies-backend.onrender.com', {
       auth: {
         token: localStorage.getItem('token')
       }

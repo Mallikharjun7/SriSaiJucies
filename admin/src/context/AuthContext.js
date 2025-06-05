@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/admin';
+const API_URL = 'https://srisaijucies-backend.onrender.com/api/admin';
 
 const api = axios.create({
     baseURL: API_URL,

@@ -19,7 +19,7 @@ const Cart = () => {
       throw new Error('No authentication token found');
     }
     return {
-      baseURL: 'http://localhost:5000',
+      baseURL: 'https://srisaijucies-backend.onrender.com',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`

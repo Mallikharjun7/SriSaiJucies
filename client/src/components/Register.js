@@ -35,7 +35,7 @@ const Register = () => {
     });
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
+      const response = await axios.post('https://srisaijucies-backend.onrender.com/api/auth/register', {
         phoneNumber,
         password
       });

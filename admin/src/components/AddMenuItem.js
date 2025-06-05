@@ -40,7 +40,7 @@ const AddMenuItem = () => {
 
         try {
             const adminToken = localStorage.getItem('adminToken');
-            const response = await axios.post('http://localhost:5000/api/items', formData, {
+            const response = await axios.post('https://srisaijucies-backend.onrender.com/api/items', formData, {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }

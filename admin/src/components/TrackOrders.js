@@ -43,7 +43,7 @@ const TrackOrders = () => {
             return;
         }
 
-        const socket = io('http://localhost:5000', {
+        const socket = io('https://srisaijucies-backend.onrender.com', {
             auth: {
                 token: adminToken
             }
@@ -83,7 +83,7 @@ const TrackOrders = () => {
                 return;
             }
 
-            const response = await axios.get('http://localhost:5000/api/admin/orders', {
+            const response = await axios.get('https://srisaijucies-backend.onrender.com/api/admin/orders', {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }
@@ -178,7 +178,7 @@ const TrackOrders = () => {
                 return;
             }
 
-            await axios.put(`http://localhost:5000/api/admin/orders/${orderId}/status`,
+            await axios.put(`https://srisaijucies-backend.onrender.com/api/admin/orders/${orderId}/status`,
                 { orderStatus: newStatus },
                 {
                     headers: {

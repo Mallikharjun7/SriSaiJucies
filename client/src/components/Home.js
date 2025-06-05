@@ -16,7 +16,7 @@ const Home = () => {
 
   const fetchSpecialItems = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/items');
+      const response = await axios.get('https://srisaijucies-backend.onrender.com/api/items');
       const specialItems = response.data.filter(item => item.isSpecial === true);
       setSpecialItems(specialItems);
       setError('');
