@@ -18,7 +18,7 @@ const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
         origin: ['https://srisaijucies-admin.onrender.com', 'https://srisaijucies-client.onrender.com'],
-        methods: ['GET', 'POST'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         credentials: true
     }
 });
@@ -60,7 +60,7 @@ app.set('io', io);
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'], // Allow requests from React frontend
+    origin: ['https://srisaijucies-admin.onrender.com', 'https://srisaijucies-client.onrender.com'], // Allow requests from React frontend
     credentials: true
 }));
 
