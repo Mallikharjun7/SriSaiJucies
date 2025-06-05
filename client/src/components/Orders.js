@@ -5,120 +5,150 @@ import { FaShoppingBag, FaMoneyBillWave, FaCreditCard, FaArrowRight } from 'reac
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { io } from 'socket.io-client';
-import { checkSessionExpiration, setupAxiosInterceptors } from '../utils/sessionManager';
+import io from 'socket.io-client';
 import './Orders.css';
-
-const socket = io('http://localhost:5000', { autoConnect: false });
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [socket, setSocket] = useState(null);
 
-  const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
-    headers: { 'Content-Type': 'application/json' }
-  });
+  // Configure axios with base URL and auth token
+  const getAuthConfig = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    return {
+      baseURL: 'http://localhost:5000',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    };
+  };
 
-  // Setup axios interceptors
-  setupAxiosInterceptors(api, navigate);
+  // Format amount to integer
+  const formatAmount = (amount) => {
+    return Math.round(amount);
+  };
+
+  // Format payment method display
+  const formatPaymentMethod = (method, transactionId) => {
+    if (!method) return 'Not specified';
+    
+    if (method === 'online' && transactionId) {
+      return `Card ending in ${transactionId.slice(-4)}`;
+    }
+    
+    return method.toUpperCase();
+  };
+
+  useEffect(() => {
+    // Initialize socket connection
+    const newSocket = io('http://localhost:5000', {
+      auth: {
+        token: localStorage.getItem('token')
+      }
+    });
+
+    // Socket connection event handlers
+    newSocket.on('connect', () => {
+      console.log('Socket connected successfully');
+      // Join user's room using userId
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        newSocket.emit('joinUserRoom', userId);
+        console.log('Joined user room:', userId);
+      }
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      toast.error('Failed to connect to real-time updates');
+    });
+
+    // Listen for order status updates
+    newSocket.on('orderStatusUpdate', (data) => {
+      console.log('Received order status update:', data);
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => {
+          if (order._id === data.orderId) {
+            console.log('Updating order:', order._id, 'New status:', data.status);
+            return { ...order, orderStatus: data.status };
+          }
+          return order;
+        });
+        console.log('Updated orders:', updatedOrders);
+        return updatedOrders;
+      });
+      toast.info(`Order status updated to: ${data.status}`);
+    });
+
+    setSocket(newSocket);
+
+    // Cleanup socket connection on unmount
+    return () => {
+      console.log('Cleaning up socket connection');
+      newSocket.disconnect();
+    };
+  }, []);
 
   const fetchOrders = async () => {
     try {
-      setLoading(true);
-      const response = await api.get('/orders');
-      if (!response?.data) throw new Error('No data received from server');
-
-      const validatedOrders = response.data.map(order => ({
-        ...order,
-        status: order.orderStatus || 'pending',        // corrected property name
-        paymentStatus: order.paymentStatus || 'pending',
-        createdAt: order.createdAt || new Date().toISOString(),
-        items: order.items || [],
-        totalAmount: order.totalAmount || 0
-      })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      setOrders(validatedOrders);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching orders:', err);
-      setError(err.message || 'Failed to fetch orders. Please try again later.');
+      const config = getAuthConfig();
+      const response = await axios.get('/api/orders', config);
+      console.log('Fetched orders:', response.data);
+      setOrders(response.data);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      if (error.message === 'No authentication token found' || error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.setItem('redirectPath', '/orders');
+        navigate('/login');
+        return;
+      }
+      toast.error('Failed to load orders');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (checkSessionExpiration()) {
-      navigate('/login');
-      return;
-    }
-
-    socket.connect();
-
-    // Get userId from localStorage (must be saved during login)
-    const userId = localStorage.getItem('userId');
-    if (userId) {
-      socket.emit('joinRoom', userId); // <-- Join user-specific room here
-    }
-
     fetchOrders();
-
-    // Listen for order status updates
-    socket.on('orderStatusUpdate', (updatedOrder) => {
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order._id === updatedOrder.orderId
-            ? { ...order, status: updatedOrder.status }
-            : order
-        )
-      );
-      toast.info(`Order #${updatedOrder.orderId.slice(-6)} status updated to ${updatedOrder.status}`);
-    });
-
-    return () => {
-      socket.off('orderStatusUpdate');
-      socket.disconnect();
-    };
-  }, [navigate]);
+  }, []);
 
   const getStatusBadge = (status) => {
+    // Default status if none provided
+    const orderStatus = status || 'processing';
+    console.log('Getting status badge for:', orderStatus);
+    
     const statusConfig = {
-      'pending': { bg: 'warning', text: 'Pending' },
-      'processing': { bg: 'info', text: 'Processing' },
-      'shipped': { bg: 'primary', text: 'Shipped' },
-      'delivered': { bg: 'success', text: 'Delivered' },
-      'cancelled': { bg: 'danger', text: 'Cancelled' },
-      'completed': { bg: 'success', text: 'Completed' }
+      'processing': { variant: 'info', text: 'Processing' },
+      'shipped': { variant: 'primary', text: 'Shipped' },
+      'delivered': { variant: 'success', text: 'Delivered' },
+      'cancelled': { variant: 'danger', text: 'Cancelled' }
     };
 
-    const config = statusConfig[status] || { bg: 'secondary', text: status };
-    return (
-      <Badge bg={config.bg} className="status-badge">
-        {config.text}
-      </Badge>
-    );
+    const config = statusConfig[orderStatus.toLowerCase()] || { variant: 'secondary', text: orderStatus };
+    return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 
-  const getPaymentStatusBadge = (paymentStatus, paymentMethod) => {
-    let bg = 'warning';
-    let text = 'Pending';
+  const getPaymentStatusBadge = (status) => {
+    // Default status if none provided
+    const paymentStatus = status || 'pending';
+    
+    const statusConfig = {
+      'pending': { variant: 'warning', text: 'Payment Pending' },
+      'completed': { variant: 'success', text: 'Paid' },
+      'failed': { variant: 'danger', text: 'Payment Failed' }
+    };
 
-    if (paymentMethod === 'online' && paymentStatus === 'Payment Done') {
-      bg = 'success';
-      text = 'Payment Done';
-    } else if (paymentMethod === 'cod') {
-      bg = 'info';
-      text = 'Cash on Delivery';
-    }
-
-    return (
-      <Badge bg={bg} className="status-badge">
-        {text}
-      </Badge>
-    );
+    const config = statusConfig[paymentStatus.toLowerCase()] || { variant: 'secondary', text: paymentStatus };
+    return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 
   const formatDate = (dateString) => {
@@ -140,79 +170,87 @@ const Orders = () => {
     }).format(price);
   };
 
-  if (loading) return <div className="orders-loading"><Spinner animation="border" role="status"><span className="visually-hidden">Loading...</span></Spinner></div>;
-  if (error) return <div className="orders-error">{error}</div>;
+  if (loading) {
+    return (
+      <Container className="orders-container">
+        <div className="loading-container">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+        </div>
+      </Container>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <Container className="orders-container">
+        <div className="no-orders">
+          <FaShoppingBag size={48} />
+          <h2>No Orders Yet</h2>
+          <p>Start shopping to see your orders here</p>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container className="orders-container">
-      <h2 className="text-center mb-4">Your Orders</h2>
-      {orders.length === 0 ? (
-        <div className="empty-orders">
-          <div className="empty-orders-icon">
-            <FaShoppingBag />
-          </div>
-          <h3>No Orders Yet</h3>
-          <p>Looks like you haven't placed any orders yet.</p>
-          <button 
-            className="start-shopping"
-            onClick={() => navigate('/menu')}
-          >
-            Start Shopping
-            <FaArrowRight className="arrow-icon" />
-          </button>
-        </div>
-      ) : (
-        <Row>
-          {orders.map(order => (
-            <Col key={order._id} md={6} lg={4} className="mb-4">
-              <Card className="order-card h-100">
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 className="mb-0">Order #{order._id?.slice(-6)}</h5>
-                    <small className="text-muted">{formatDate(order.createdAt)}</small>
+      <h2 className="orders-title">Your Orders</h2>
+      <div className="orders-list">
+        {orders.map((order) => (
+          <Card key={order._id} className="order-card">
+            <Card.Body>
+              <div className="order-header">
+                <div className="order-info">
+                  <h3>Order #{order._id.slice(-6)}</h3>
+                  <p className="order-date">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="status-badges">
+                  <div className="status-item">
+                    <span className="status-label">Order Status:</span>
+                    {getStatusBadge(order.orderStatus)}
                   </div>
-                  <div className="d-flex gap-2">
-                    {getPaymentStatusBadge(order.paymentStatus, order.paymentMethod)}
-                    {getStatusBadge(order.status)}
+                  <div className="status-item">
+                    <span className="status-label">Payment Status:</span>
+                    {getPaymentStatusBadge(order.paymentStatus)}
                   </div>
-                </Card.Header>
-                <Card.Body>
-                  <div className="order-items flex-grow-1">
-                    {order.items?.map(item => (
-                      <div key={item._id} className="order-item">
-                        <div className="item-details">
-                          <h6>{item.name || 'Unknown Item'}</h6>
-                          <p>Quantity: {item.quantity || 0}</p>
-                          <p>Price: {formatPrice(item.price || 0)}</p>
-                        </div>
-                      </div>
-                    )) || <p>No items in this order</p>}
-                  </div>
-                  <hr />
-                  <div className="order-summary">
-                    <div className="payment-method">
-                      {order.paymentMethod === 'online' ? <FaCreditCard className="me-2" /> : <FaMoneyBillWave className="me-2" />}
-                      {order.paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}
-                    </div>
-                    <div className="total-amount">
-                      <h5>Total: {formatPrice(order.totalAmount || 0)}</h5>
+                </div>
+              </div>
+              
+              <div className="order-items">
+                {order.items.map((item, index) => (
+                  <div key={index} className="order-item">
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.name} 
+                      className="order-item-image"
+                    />
+                    <div className="order-item-details">
+                      <h4>{item.name}</h4>
+                      <p>Quantity: {item.quantity}</p>
+                      <p>Price: ₹{formatAmount(item.price)}</p>
                     </div>
                   </div>
-                </Card.Body>
-                <Card.Footer>
-                  <div className="shipping-address">
-                    <h6>Shipping Address:</h6>
-                    <p className="mb-1">{order.shippingDetails?.fullName || 'N/A'}</p>
-                    <p className="mb-1">{order.shippingDetails?.address || 'N/A'}</p>
-                    <p className="mb-1">{order.shippingDetails?.city || 'N/A'}, {order.shippingDetails?.state || 'N/A'} {order.shippingDetails?.zipCode || 'N/A'}</p>
-                    <p className="mb-0">Phone: {order.shippingDetails?.phone || 'N/A'}</p>
-                  </div>
-                </Card.Footer>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
+                ))}
+              </div>
+
+              <div className="order-footer">
+                <div className="order-total">
+                  <FaMoneyBillWave className="icon" />
+                  <span>Total: ₹{formatAmount(order.totalAmount)}</span>
+                </div>
+                <div className="order-payment">
+                  <FaCreditCard className="icon" />
+                  <span>{formatPaymentMethod(order.paymentMethod, order.transactionId)}</span>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        ))}
+      </div>
     </Container>
   );
 };

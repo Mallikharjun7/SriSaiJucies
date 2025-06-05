@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Form, Button, Container, Row, Col, Card, Alert } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { FaCreditCard, FaPaypal, FaLock, FaCheckCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { checkSessionExpiration } from '../utils/sessionManager';
 import './Checkout.css';
 
 // Initialize Stripe with error handling
@@ -47,33 +46,18 @@ const Checkout = () => {
   const [cardError, setCardError] = useState(null);
   const [processing, setProcessing] = useState(false);
 
-  // Configure axios with auth token
+  // Configure axios with base URL and auth token
   const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'http://localhost:5000',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
   });
 
-  // Add request interceptor to add token
-  api.interceptors.request.use(
-    (config) => {
-      if (checkSessionExpiration()) {
-        navigate('/login');
-        return Promise.reject('Session expired');
-      }
-      const token = localStorage.getItem('token');
-      config.headers.Authorization = `Bearer ${token}`;
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
-    }
-  );
-
   useEffect(() => {
     fetchCart();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     // Calculate delivery charge when payment method or cart items change
@@ -90,7 +74,7 @@ const Checkout = () => {
   const fetchCart = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/cart');
+      const response = await api.get('/api/cart');
       const cart = response.data;
       setCartItems(cart.items || []);
       setTotalAmount(cart.totalAmount || 0);
@@ -98,9 +82,6 @@ const Checkout = () => {
     } catch (err) {
       console.error('Error fetching cart:', err);
       setError('Failed to fetch cart items');
-      if (err.response?.status === 401) {
-        navigate('/login');
-      }
     } finally {
       setLoading(false);
     }
@@ -128,7 +109,7 @@ const Checkout = () => {
       const amountInPaise = Math.round(totalAmount * 100);
 
       // Create payment intent
-      const { data } = await api.post('/payments/create-payment-intent', {
+      const { data } = await api.post('/api/payments/create-payment-intent', {
         amount: amountInPaise,
         currency: 'inr',
         metadata: {
@@ -196,10 +177,10 @@ const Checkout = () => {
         };
 
         // Create order in your database
-        await api.post('/orders', orderData);
+        await api.post('/api/orders', orderData);
         
         // Clear the cart
-        await api.delete('/cart/clear');
+        await api.delete('/api/cart/clear');
         
         toast.success('Payment successful and order placed!');
         navigate('/checkout/success');
@@ -246,10 +227,10 @@ const Checkout = () => {
       };
 
       // Send order to backend
-      await api.post('/orders', orderData);
+      await api.post('/api/orders', orderData);
       
       // Clear cart after successful order
-      await api.delete('/cart/clear');
+      await api.delete('/api/cart/clear');
       
       toast.success('Order placed successfully!');
       navigate('/orders');

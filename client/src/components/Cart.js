@@ -3,7 +3,6 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaShoppingCart, FaArrowRight } from 'react-icons/fa';
-import { checkSessionExpiration, setupAxiosInterceptors } from '../utils/sessionManager';
 import './Cart.css';
 
 const Cart = () => {
@@ -14,21 +13,26 @@ const Cart = () => {
   const navigate = useNavigate();
 
   // Configure axios with base URL and auth token
-  const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
-    headers: {
-      'Content-Type': 'application/json'
+  const getAuthConfig = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
     }
-  });
-
-  // Setup axios interceptors
-  setupAxiosInterceptors(api, navigate);
+    return {
+      baseURL: 'http://localhost:5000',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    };
+  };
 
   // Fetch cart items
   const fetchCart = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/cart');
+      const config = getAuthConfig();
+      const response = await axios.get('/api/cart', config);
       // Handle the nested cart structure
       const cart = response.data;
       setCartItems(cart.items || []);
@@ -36,6 +40,13 @@ const Cart = () => {
       setError(null);
     } catch (err) {
       console.error('Error fetching cart:', err);
+      if (err.message === 'No authentication token found' || err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.setItem('redirectPath', '/cart');
+        navigate('/login');
+        return;
+      }
       setError('Failed to fetch cart items');
       setCartItems([]);
       setTotalAmount(0);
@@ -47,53 +58,87 @@ const Cart = () => {
   // Add item to cart
   const addToCart = async (item) => {
     try {
-      await api.post('/cart/add', {
+      const config = getAuthConfig();
+      await axios.post('/api/cart/add', {
         name: item.name,
         imageUrl: item.imageUrl,
         price: item.price,
         quantity: 1
-      });
+      }, config);
       fetchCart();
       toast.success('Item added to cart');
     } catch (err) {
       console.error('Error adding to cart:', err);
+      if (err.message === 'No authentication token found' || err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.setItem('redirectPath', '/cart');
+        navigate('/login');
+        return;
+      }
       toast.error('Failed to add item to cart');
     }
   };
 
-  // Update item quantity
-  const updateQuantity = async (itemId, quantity) => {
-    try {
-      await api.put(`/cart/update/${itemId}`, { quantity });
-      fetchCart();
-      toast.success('Quantity updated');
-    } catch (err) {
-      console.error('Error updating quantity:', err);
-      toast.error('Failed to update quantity');
-    }
-  };
-
   // Remove item from cart
-  const removeItem = async (itemId) => {
+  const removeFromCart = async (itemId) => {
     try {
-      await api.delete(`/cart/remove/${itemId}`);
+      const config = getAuthConfig();
+      await axios.delete(`/api/cart/remove/${itemId}`, config);
       fetchCart();
       toast.success('Item removed from cart');
     } catch (err) {
-      console.error('Error removing item:', err);
-      toast.error('Failed to remove item');
+      console.error('Error removing from cart:', err);
+      if (err.message === 'No authentication token found' || err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.setItem('redirectPath', '/cart');
+        navigate('/login');
+        return;
+      }
+      toast.error('Failed to remove item from cart');
+    }
+  };
+
+  // Update item quantity
+  const updateQuantity = async (itemId, newQuantity) => {
+    if (newQuantity < 1) return;
+    
+    try {
+      const config = getAuthConfig();
+      await axios.put(`/api/cart/update/${itemId}`, {
+        quantity: newQuantity
+      }, config);
+      fetchCart();
+    } catch (err) {
+      console.error('Error updating quantity:', err);
+      if (err.message === 'No authentication token found' || err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.setItem('redirectPath', '/cart');
+        navigate('/login');
+        return;
+      }
+      toast.error('Failed to update quantity');
     }
   };
 
   // Clear cart
   const clearCart = async () => {
     try {
-      await api.delete('/cart/clear');
-      setCartItems([]);
-      setTotalAmount(0);
-      toast.success('Cart cleared');
+      const config = getAuthConfig();
+      await axios.delete('/api/cart/clear', config);
+      fetchCart();
+      toast.success('Cart cleared successfully');
     } catch (err) {
       console.error('Error clearing cart:', err);
+      if (err.message === 'No authentication token found' || err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.setItem('redirectPath', '/cart');
+        navigate('/login');
+        return;
+      }
       toast.error('Failed to clear cart');
     }
   };
@@ -108,12 +153,8 @@ const Cart = () => {
   };
 
   useEffect(() => {
-    if (checkSessionExpiration()) {
-      navigate('/login');
-      return;
-    }
     fetchCart();
-  }, [navigate]);
+  }, []);
 
   if (loading) {
     return <div className="cart-loading">Loading cart...</div>;
@@ -168,7 +209,7 @@ const Cart = () => {
                   <p className="item-price">Price: {formatPrice(item.price)}</p>
                   <button 
                     className="remove-button"
-                    onClick={() => removeItem(item._id)}
+                    onClick={() => removeFromCart(item._id)}
                   >
                     Remove
                   </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Container, Card, Alert, Spinner } from 'react-bootstrap';
 import { FaPhone, FaLock, FaSignInAlt } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Check if user is already logged in
   useEffect(() => {
@@ -19,7 +20,9 @@ const Login = () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     
     if (token && isLoggedIn) {
-      navigate('/');
+      const redirectPath = localStorage.getItem('redirectPath') || '/';
+      localStorage.removeItem('redirectPath');
+      navigate(redirectPath);
     }
   }, [navigate]);
 
@@ -48,9 +51,13 @@ const Login = () => {
           autoClose: 2000,
         });
 
+        // Get the redirect path or default to home
+        const redirectPath = localStorage.getItem('redirectPath') || '/';
+        localStorage.removeItem('redirectPath');
+
         // Navigate after a short delay
         setTimeout(() => {
-          navigate('/');
+          navigate(redirectPath);
         }, 2000);
       }
     } catch (err) {
