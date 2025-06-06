@@ -7,17 +7,52 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Register = () => {
-    const [phoneNumber, setPhone] = useState('');
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const [phoneNumber, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Phone number validation
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^\d{10}$/;
+    return phoneRegex.test(phone);
+  };
+
+  // Password validation
+  const validatePassword = (pass) => {
+    return pass.length >= 6;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
+    // Validate phone number
+    if (!validatePhoneNumber(phoneNumber)) {
+      const errorMessage = 'Please enter a valid 10-digit phone number';
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-center",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    // Validate password length
+    if (!validatePassword(password)) {
+      const errorMessage = 'Password must be at least 6 characters long';
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-center",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    // Check if passwords match
     if (password !== confirmPassword) {
       const errorMessage = 'Passwords do not match';
       setError(errorMessage);
@@ -35,7 +70,7 @@ const Register = () => {
     });
 
     try {
-      const response = await axios.post('https://srisaijucies-backend.onrender.com/api/auth/register', {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         phoneNumber,
         password
       });
@@ -102,12 +137,17 @@ const Register = () => {
               </Form.Label>
               <Form.Control
                 type="tel"
-                placeholder="Enter your phone number"
+                placeholder="Enter 10-digit phone number"
                 value={phoneNumber}
                 onChange={(e) => setPhone(e.target.value)}
                 required
                 disabled={loading}
+                pattern="[0-9]{10}"
+                maxLength={10}
               />
+              <Form.Text className="text-muted">
+                Please enter a 10-digit phone number
+              </Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -117,12 +157,16 @@ const Register = () => {
               </Form.Label>
               <Form.Control
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Enter password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
+                minLength={6}
               />
+              <Form.Text className="text-muted">
+                Password must be at least 6 characters long
+              </Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -137,6 +181,7 @@ const Register = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
+                minLength={6}
               />
             </Form.Group>
 

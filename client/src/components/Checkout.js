@@ -48,7 +48,7 @@ const Checkout = () => {
 
   // Configure axios with base URL and auth token
   const api = axios.create({
-    baseURL: 'https://srisaijucies-backend.onrender.com',
+    baseURL: process.env.REACT_APP_API_URL || 'https://srisaijucies-backend.onrender.com',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`

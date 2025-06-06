@@ -34,7 +34,7 @@ router.post('/register', validateInput, async (req, res) => {
         // Check if user already exists
         let user = await User.findOne({ phoneNumber });
         if (user) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: 'Phone number already registered' });
         }
 
         // Hash password
@@ -62,7 +62,7 @@ router.post('/register', validateInput, async (req, res) => {
 });
 
 // Login User
-router.post('/login', validateInput, async (req, res) => {
+router.post('/login', async (req, res) => {
     try {
         const { phoneNumber, password } = req.body;
 

@@ -5,6 +5,7 @@ import './Home.css';
 import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const API_URL = process.env.REACT_APP_API_URL || 'https://srisaijucies-backend.onrender.com';
   const [specialItems, setSpecialItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,7 +17,7 @@ const Home = () => {
 
   const fetchSpecialItems = async () => {
     try {
-      const response = await axios.get('https://srisaijucies-backend.onrender.com/api/items');
+      const response = await axios.get(`${API_URL}/api/items`);
       const specialItems = response.data.filter(item => item.isSpecial === true);
       setSpecialItems(specialItems);
       setError('');

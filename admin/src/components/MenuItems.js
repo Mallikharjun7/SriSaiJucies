@@ -3,6 +3,7 @@ import axios from 'axios';
 import './MenuItems.css';
 
 const MenuItems = () => {
+    const API_URL = process.env.REACT_APP_API_URL || 'https://srisaijucies-backend.onrender.com';
     const [items, setItems] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
     const [error, setError] = useState('');
@@ -11,7 +12,7 @@ const MenuItems = () => {
     const fetchItems = async () => {
         try {
             const adminToken = localStorage.getItem('adminToken');
-            const response = await axios.get('https://srisaijucies-backend.onrender.com/api/items', {
+            const response = await axios.get(`${API_URL}/api/items`, {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }
@@ -31,7 +32,7 @@ const MenuItems = () => {
 
         try {
             const adminToken = localStorage.getItem('adminToken');
-            await axios.delete(`http://localhost:5000/api/items/${id}`, {
+            await axios.delete(`${API_URL}/api/items/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }
@@ -47,7 +48,7 @@ const MenuItems = () => {
         e.preventDefault();
         try {
             const adminToken = localStorage.getItem('adminToken');
-            await axios.put(`http://localhost:5000/api/items/${editingItem._id}`, editingItem, {
+            await axios.put(`${API_URL}/api/items/${editingItem._id}`, editingItem, {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }

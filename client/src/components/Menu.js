@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './Menu.css';
 
 const Menu = () => {
+  const API_URL = process.env.REACT_APP_API_URL || 'https://srisaijucies-backend.onrender.com';
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,7 +19,7 @@ const Menu = () => {
 
   // Create axios instance with auth header
   const api = axios.create({
-    baseURL: 'https://srisaijucies-backend.onrender.com/api',
+    baseURL: `${API_URL}/api`,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -31,7 +32,7 @@ const Menu = () => {
 
   const fetchItems = async () => {
     try {
-      const response = await axios.get('https://srisaijucies-backend.onrender.com/api/items');
+      const response = await axios.get(`${API_URL}/api/items`);
       setItems(response.data);
       setError('');
     } catch (err) {
@@ -152,6 +153,8 @@ const Menu = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="searchinput"
+              aria-label="Search menu items"
+              style={{ paddingLeft: '2.75rem' }}
             />
           </div>
         </Col>
@@ -167,6 +170,7 @@ const Menu = () => {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="filter-select"
+                aria-label="Sort items by"
               >
                 <option value="name">Name</option>
                 <option value="price">Price</option>
@@ -179,6 +183,7 @@ const Menu = () => {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="filter-select"
+                aria-label="Filter by category"
               >
                 <option value="all">All Categories</option>
                 <option value="Juice">Juices</option>

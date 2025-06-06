@@ -3,6 +3,7 @@ import axios from 'axios';
 import './AddMenuItem.css';
 
 const AddMenuItem = () => {
+    const API_URL = process.env.REACT_APP_API_URL || 'https://srisaijucies-backend.onrender.com';
     const [formData, setFormData] = useState({
         name: '',
         imageUrl: '',
@@ -40,7 +41,7 @@ const AddMenuItem = () => {
 
         try {
             const adminToken = localStorage.getItem('adminToken');
-            const response = await axios.post('https://srisaijucies-backend.onrender.com/api/items', formData, {
+            const response = await axios.post(`${API_URL}/api/items`, formData, {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }

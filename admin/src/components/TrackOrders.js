@@ -24,6 +24,7 @@ const isToday = (dateString) => {
 };
 
 const TrackOrders = () => {
+    const API_URL = process.env.REACT_APP_API_URL || 'https://srisaijucies-backend.onrender.com';
     const [orders, setOrders] = useState([]);
     const [filteredOrders, setFilteredOrders] = useState([]);
     const [groupedOrders, setGroupedOrders] = useState({});
@@ -43,7 +44,7 @@ const TrackOrders = () => {
             return;
         }
 
-        const socket = io('https://srisaijucies-backend.onrender.com', {
+        const socket = io(`${API_URL}`, {
             auth: {
                 token: adminToken
             }
@@ -83,7 +84,7 @@ const TrackOrders = () => {
                 return;
             }
 
-            const response = await axios.get('https://srisaijucies-backend.onrender.com/api/admin/orders', {
+            const response = await axios.get(`${API_URL}/api/admin/orders`, {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`
                 }
@@ -178,7 +179,7 @@ const TrackOrders = () => {
                 return;
             }
 
-            await axios.put(`https://srisaijucies-backend.onrender.com/api/admin/orders/${orderId}/status`,
+            await axios.put(`${API_URL}/api/admin/orders/${orderId}/status`,
                 { orderStatus: newStatus },
                 {
                     headers: {

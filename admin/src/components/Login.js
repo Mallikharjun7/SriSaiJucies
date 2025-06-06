@@ -30,7 +30,7 @@ const Login = () => {
             await login(formData.phoneNumber, formData.password);
             navigate('/add-menu');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to login');
+            setError(err.message || 'Failed to login');
         } finally {
             setLoading(false);
         }
@@ -77,12 +77,12 @@ const Login = () => {
                         />
                     </div>
 
-                    <button type="submit" className="login-button" disabled={loading}>
-                        {loading ? (
-                            <div className="loading-spinner"></div>
-                        ) : (
-                            'Login'
-                        )}
+                    <button 
+                        type="submit" 
+                        className="login-button"
+                        disabled={loading}
+                    >
+                        {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
             </div>

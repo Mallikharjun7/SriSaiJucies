@@ -7,6 +7,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
+  const API_URL = process.env.REACT_APP_API_URL || 'https://srisaijucies-backend.onrender.com';
   const [phoneNumber, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -32,7 +33,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('https://srisaijucies-backend.onrender.com/api/auth/login', {
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         phoneNumber,
         password
       });
